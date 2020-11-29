@@ -1,41 +1,62 @@
-import pyautogui
-import time
-import random
 import cv2
-#screenshot = pyautogui.screenshot()
-#screenshot2 = pyautogui.screenshot("my_screenshot.png")
-time.sleep(5)
-# copperlocation = pyautogui.locateCenterOnScreen("copper.png")
-# pyautogui.click(copperlocation)
-# print(copperlocation)
-# def main():
-#     time.sleep(7)
-#     findOre()
-#     #pyautogui.click(copperX, copperY)
-#     print("clicked")
+import numpy as np
 
-time.sleep(5)
-def findOre():
-    x = 300
-    y = 300
-    width = 1300
-    height = 700
-    img = pyautogui.screenshot(region = (x,y,width,height))
-    ore_colors = ["734E2E", "624327", "6E4B2C", (110, 75, 44), (109, 74, 43), (106, 72, 42)]
+def find_ore_deposit(source_img_path, object_img_path, threshold=0.35, debug_mode=None):
+    print("here")
+    source_img = cv2.imread(source_img_path, cv2.IMREAD_UNCHANGED)
+    object_img = cv2.imread(object_img_path, cv2.IMREAD_UNCHANGED)
 
-    for i in range(0, 910000):
-        random_x = random.randint(0, width-1)
-        random_y = random.randint(0, height-1)
-        sample_color = img.getpixel((random_x, random_y))
-        print(sample_color)
-        print(random_x)
-        print(random_y)
+    object_w = object_img.shape[1]
+    object_h = object_img.shape[0]
+
+    method = cv2.TM_CCOEFF_NORMED
+    result = cv2.matchTemplate(source_img, object_img, method)
+
+    locations = np.where(result >= threshold)
+    locations = list(zip(*locations[::-1]))
+
+    rectangles = []
+    for loc in locations:
+        rect = [int(loc[0]), int(loc[1]), object_w, object_h]
+        rectangles.append(rect)
+        rectangles.append(rect)
+    print("first for loop done")
+    rectangles, weights = cv2.groupRectangles(rectangles, 1, 0.5)
+    print(rectangles)
+
+    points = []
+    print("here")
+    if len(rectangles):
+        print("object found")
+
+        #object_w = object_img.shape[1]
+        #object_h = object_img.shape[0]
+        line_color = (0,255,0)
+        line_type = cv2.LINE_4
+        marker_color = (0, 255, 0)
+        marker_type = cv2.MARKER_CROSS
 
 
-        if sample_color in ore_colors:
-            pyautogui.moveTo(random_x, random_y)
-            time.sleep(3)
+        for (x, y, w, h) in rectangles:
+            print("starting for loop")
+            center_x = x + int(w/2)
+            center_y = y + int(h/2)
+            points.append((center_x,center_y))
+            print("points exist")
+            if debug_mode == "rectangles":
+                print("debugging rectangles")
+                top_left = (x, y)
+                bottom_right = (x + w, y + h)
+                cv2.rectangle(source_img, top_left, bottom_right, line_color, 1, line_type)
+            elif debug_mode == "points":
+                print("debugging points")
+                cv2.drawMarker(source_img, (center_x, center_y), marker_color, marker_type)
+                #cv2.imshow("matches", source_img)
+                #cv2.waitKey()
+        if debug_mode:
+            cv2.imshow("Matches", source_img)
+            cv2.waitKey()
+    return points
 
-
-
-print(findOre())
+points = find_ore_deposit("screenshot3.png", "copper3.png", debug_mode="rectangles")
+print(points)
