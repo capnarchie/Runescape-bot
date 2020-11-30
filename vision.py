@@ -12,10 +12,11 @@ class Vision:
     method = None
 
     def __init__(self, object_img_path, method=cv2.TM_CCOEFF_NORMED):
-        self.object_img = cv2.imread(object_img_path, cv2.IMREAD_UNCHANGED)
+        if object_img_path:
+            self.object_img = cv2.imread(object_img_path, cv2.IMREAD_UNCHANGED)
 
-        self.object_w = self.object_img.shape[1]
-        self.object_h = self.object_img.shape[0]
+            self.object_w = self.object_img.shape[1]
+            self.object_h = self.object_img.shape[0]
 
         self.method = method
 
@@ -41,7 +42,7 @@ class Vision:
         print("first for loop done")
         rectangles, weights = cv2.groupRectangles(rectangles, 1, 0.5)
         #print(rectangles)
-        
+
         return rectangles
 
     def get_click_points(self, rectangles):
